@@ -1,6 +1,1 @@
-"""
-OMEGA-Net: PyTorch Implementation for Nuclei Segmentation
-Fixed Kolmogorov-Arnold Network (KAN) implementation
-"""
-
-
+## <p align="center">[Dual-Channel Progressive Depth Attention Network for Nuclei Segmentation in Diverse Histopathological Datasets](link)</p>
