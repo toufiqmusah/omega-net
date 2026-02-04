@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from models import OMEGANet
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from utils import NucleiDataset, DiceLoss, JaccardLoss
+from torch.utils.data import DataLoader, random_split
+from utils import NucleiDataset, NucleiDatasetFromPath, DiceLoss, JaccardLoss
 
 
 # ==================== Training Function ====================
@@ -85,6 +85,88 @@ if __name__ == '__main__':
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Total parameters: {total_params:,}')
     print(f'Trainable parameters: {trainable_params:,}')
+    
+    # ==================== Example 1: Using NucleiDatasetFromPath (Directory-based) ====================
+    # This is the recommended approach when you have images organized in directories
+    """
+    # Directory structure should be:
+    # Nuclei-Segmentation-Data/Nuclei_Segmentation_256/Train/
+    # ├── Hematoxylin_MCT/
+    # │   └── *.bmp
+    # ├── Normalized_MCT/
+    # │   └── *.bmp
+    # └── Mask_MCT/
+    #     └── *.bmp
+    
+    # Load dataset from directory
+    data_dir = "Nuclei-Segmentation-Data/Nuclei_Segmentation_256/Train"
+    full_dataset = NucleiDatasetFromPath(root_dir=data_dir)
+    
+    # Create train/validation split (e.g., 80/20)
+    train_size = int(0.8 * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    
+    # Create data loaders
+    # Note: num_workers can be adjusted based on available CPU cores
+    # Use 0 for single-core systems or debugging
+    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=4)
+    
+    # Setup training
+    criterion = CombinedLoss(bce_weight=1.0, dice_weight=1.0, jaccard_weight=1.0)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    
+    # Train the model
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    history = train_model(model, train_loader, val_loader, criterion, optimizer, 
+                         num_epochs=100, device=device)
+    
+    print("Training complete!")
+    print(f"Best validation dice score: {max(history['val_dice']):.4f}")
+    """
+    
+    # ==================== Example 2: Using NucleiDataset (Array-based) ====================
+    # This approach is for when you have pre-loaded numpy arrays
+    """
+    # Assuming you have already loaded your data as numpy arrays:
+    # images_norm: normalized images (N, H, W, C)
+    # images_hema: hematoxylin images (N, H, W, C)
+    # masks: ground truth masks (N, H, W, C)
+    
+    from sklearn.model_selection import train_test_split
+    
+    # Split data
+    indices = np.arange(len(images_norm))
+    train_idx, val_idx = train_test_split(indices, test_size=0.2, random_state=42)
+    
+    # Create datasets
+    train_dataset = NucleiDataset(
+        images_norm[train_idx], 
+        images_hema[train_idx], 
+        masks[train_idx]
+    )
+    val_dataset = NucleiDataset(
+        images_norm[val_idx], 
+        images_hema[val_idx], 
+        masks[val_idx]
+    )
+    
+    # Create data loaders
+    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
+    
+    # Setup training
+    criterion = CombinedLoss(bce_weight=1.0, dice_weight=1.0, jaccard_weight=1.0)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    
+    # Train the model
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    history = train_model(model, train_loader, val_loader, criterion, optimizer, 
+                         num_epochs=100, device=device)
+    
+    print("Training complete!")
+    """
     
     # output = model(x1, x2)
     # print(f'Input shapes: {x1.shape}, {x2.shape}')
