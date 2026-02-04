@@ -262,22 +262,22 @@ class OMEGANet(nn.Module):
         self.ag4 = AttentionGate(base_filters*2, base_filters*2, base_filters*8, base_filters*2)
         self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.att4 = UnifiedAttention(base_filters*8)
-        self.dec4 = ConvBlock(base_filters*8, base_filters*2, dropout, batch_norm=True)
+        self.dec4 = ConvBlock(base_filters*10, base_filters*2, dropout, batch_norm=True)
         
         self.ag3 = AttentionGate(base_filters, base_filters, base_filters*2, base_filters)
         self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.att3 = UnifiedAttention(base_filters*4)
-        self.dec3 = ConvBlock(base_filters*4, base_filters, dropout, batch_norm=True)
+        self.att3 = UnifiedAttention(base_filters*2)
+        self.dec3 = ConvBlock(base_filters*3, base_filters, dropout, batch_norm=True)
         
         self.ag2 = AttentionGate(base_filters//2, base_filters//2, base_filters, base_filters//2)
         self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.att2 = UnifiedAttention(base_filters*2)
-        self.dec2 = ConvBlock(base_filters*2, base_filters//2, dropout, batch_norm=True)
+        self.att2 = UnifiedAttention(base_filters)
+        self.dec2 = ConvBlock(base_filters + base_filters//2, base_filters//2, dropout, batch_norm=True)
         
         self.ag1 = AttentionGate(base_filters//4, base_filters//4, base_filters//2, base_filters//4)
         self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.att1 = UnifiedAttention(base_filters)
-        self.dec1 = ConvBlock(base_filters, base_filters//4, dropout, batch_norm=True)
+        self.att1 = UnifiedAttention(base_filters//2)
+        self.dec1 = ConvBlock(base_filters//2 + base_filters//4, base_filters//4, dropout, batch_norm=True)
         
         # Final output
         self.out_conv = nn.Conv2d(base_filters//4, 1, kernel_size=1)
