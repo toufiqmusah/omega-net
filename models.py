@@ -105,12 +105,13 @@ class UnifiedAttention(nn.Module):
 
 class AttentionGate(nn.Module):
     """Attention Gate for skip connections"""
-    def __init__(self, channels):
+    def __init__(self, x_channels, y_channels, g_channels, inter_channels):
         super().__init__()
-        self.conv_x = nn.Conv2d(channels, channels, kernel_size=1)
-        self.conv_y = nn.Conv2d(channels, channels, kernel_size=1)
-        self.conv_g = nn.Conv2d(channels, 1, kernel_size=1)
-        self.bn = nn.BatchNorm2d(channels)
+        self.conv_x = nn.Conv2d(x_channels, inter_channels, kernel_size=1)
+        self.conv_y = nn.Conv2d(y_channels, inter_channels, kernel_size=1)
+        self.conv_g = nn.Conv2d(g_channels, inter_channels, kernel_size=1)
+        self.conv_out = nn.Conv2d(inter_channels, 1, kernel_size=1)
+        self.bn = nn.BatchNorm2d(inter_channels)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         
     def forward(self, x, y, g):
@@ -123,7 +124,8 @@ class AttentionGate(nn.Module):
         concat = self.bn(concat)
         f = F.relu(concat)
         
-        psi = x * y * f
+        attention = torch.sigmoid(self.conv_out(f))
+        psi = x * y * attention
         return psi
 
 
@@ -257,22 +259,22 @@ class OMEGANet(nn.Module):
         self.bottleneck_2 = ConvBlock(base_filters*4, base_filters*4, dropout, batch_norm=True)
         
         # ===== Decoder with Attention Gates =====
-        self.ag4 = AttentionGate(base_filters*2)
+        self.ag4 = AttentionGate(base_filters*2, base_filters*2, base_filters*8, base_filters*2)
         self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.att4 = UnifiedAttention(base_filters*8)
         self.dec4 = ConvBlock(base_filters*8, base_filters*2, dropout, batch_norm=True)
         
-        self.ag3 = AttentionGate(base_filters)
+        self.ag3 = AttentionGate(base_filters, base_filters, base_filters*2, base_filters)
         self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.att3 = UnifiedAttention(base_filters*4)
         self.dec3 = ConvBlock(base_filters*4, base_filters, dropout, batch_norm=True)
         
-        self.ag2 = AttentionGate(base_filters//2)
+        self.ag2 = AttentionGate(base_filters//2, base_filters//2, base_filters, base_filters//2)
         self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.att2 = UnifiedAttention(base_filters*2)
         self.dec2 = ConvBlock(base_filters*2, base_filters//2, dropout, batch_norm=True)
         
-        self.ag1 = AttentionGate(base_filters//4)
+        self.ag1 = AttentionGate(base_filters//4, base_filters//4, base_filters//2, base_filters//4)
         self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.att1 = UnifiedAttention(base_filters)
         self.dec1 = ConvBlock(base_filters, base_filters//4, dropout, batch_norm=True)
