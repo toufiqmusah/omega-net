@@ -3,7 +3,7 @@ import torch.nn as nn
 from models import OMEGANet
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, random_split
-from utils import NucleiDataset, NucleiDatasetFromPath, DiceLoss, JaccardLoss
+from utils import NucleiDataset, NucleiDatasetFromPath, DiceLoss, JaccardLoss, CombinedLoss
 
 
 # ==================== Training Function ====================
@@ -88,7 +88,6 @@ if __name__ == '__main__':
     
     # ==================== Example 1: Using NucleiDatasetFromPath (Directory-based) ====================
     # This is the recommended approach when you have images organized in directories
-    """
     # Directory structure should be:
     # Nuclei-Segmentation-Data/Nuclei_Segmentation_256/Train/
     # ├── Hematoxylin_MCT/
@@ -99,7 +98,7 @@ if __name__ == '__main__':
     #     └── *.bmp
     
     # Load dataset from directory
-    data_dir = "Nuclei-Segmentation-Data/Nuclei_Segmentation_256/Train"
+    data_dir = "/content/Nuclei-Segmentation-Data/Nuclei_Segmentation_256/Train"
     full_dataset = NucleiDatasetFromPath(root_dir=data_dir)
     
     # Create train/validation split (e.g., 80/20)
@@ -124,7 +123,6 @@ if __name__ == '__main__':
     
     print("Training complete!")
     print(f"Best validation dice score: {max(history['val_dice']):.4f}")
-    """
     
     # ==================== Example 2: Using NucleiDataset (Array-based) ====================
     # This approach is for when you have pre-loaded numpy arrays
