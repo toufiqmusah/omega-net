@@ -122,12 +122,9 @@ class NucleiDatasetFromPath(Dataset):
         """Validate that all files exist in all three directories"""
         missing_files = []
         for filename in self.image_files:
-            hema_path = os.path.join(self.hema_dir, filename)
             norm_path = os.path.join(self.norm_dir, filename)
             mask_path = os.path.join(self.mask_dir, filename)
             
-            if not os.path.exists(hema_path):
-                missing_files.append(f"Hematoxylin_MCT/{filename}")
             if not os.path.exists(norm_path):
                 missing_files.append(f"Normalized_MCT/{filename}")
             if not os.path.exists(mask_path):

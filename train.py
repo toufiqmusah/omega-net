@@ -108,6 +108,8 @@ if __name__ == '__main__':
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
     
     # Create data loaders
+    # Note: num_workers can be adjusted based on available CPU cores
+    # Use 0 for single-core systems or debugging
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=4)
     
